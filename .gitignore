@@ -17,11 +17,15 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files
-.env*
+.env
+.env.local
+.env.production
+.env*.local
+# Allow .env.example
+!.env.example
 
 # vercel
 .vercel
 
-# typescript
+# typescript (removed - using JavaScript only)
 *.tsbuildinfo
-next-env.d.ts

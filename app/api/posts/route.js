@@ -1,10 +1,18 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { neon } from "@neondatabase/serverless"
+import { getServerSession } from "next-auth"
+import { authOptions } from "../auth/[...nextauth]/route"
 
-const sql = neon(process.env.DATABASE_URL!)
+const sql = neon(process.env.DATABASE_URL)
 
-export async function POST(request: NextRequest) {
+export async function POST(request) {
   try {
+    const session = await getServerSession(authOptions)
+
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { imageUrl, prompt } = await request.json()
 
     if (!imageUrl || !prompt) {
@@ -12,8 +20,8 @@ export async function POST(request: NextRequest) {
     }
 
     await sql`
-      INSERT INTO posts (image_url, prompt)
-      VALUES (${imageUrl}, ${prompt})
+      INSERT INTO posts (image_url, prompt, user_id)
+      VALUES (${imageUrl}, ${prompt}, ${session.user.id})
     `
 
     return NextResponse.json({ success: true })

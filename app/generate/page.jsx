@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+// import { useSession, signOut } from "next-auth/react"
+// import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
@@ -9,16 +11,26 @@ import Link from "next/link"
 import Image from "next/image"
 
 export default function GeneratePage() {
+  // Authentication is optional - uncomment if needed
+  // const { data: session, status } = useSession()
+  // const router = useRouter()
+  
   const [prompt, setPrompt] = useState("")
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null)
+  const [generatedImage, setGeneratedImage] = useState(null)
+  const [generatedPrompt, setGeneratedPrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(null)
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return
 
     setIsGenerating(true)
     setGeneratedImage(null)
+    setGeneratedPrompt("")
+    setError(null)
+    setSuccess(null)
 
     try {
       const response = await fetch("/api/generate", {
@@ -30,50 +42,60 @@ export default function GeneratePage() {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.error || "Failed to generate image. Please try again.")
+        const errorMsg = data.error || "Failed to generate image. Please try again."
+        setError(errorMsg)
         return
       }
 
       if (data.imageUrl) {
         setGeneratedImage(data.imageUrl)
+        setGeneratedPrompt(data.prompt || prompt)
       } else {
         throw new Error("No image URL returned")
       }
     } catch (error) {
       console.error("Error generating image:", error)
-      alert("Failed to generate image. Please try again.")
+      setError(`Network error: ${error.message || "Failed to connect to the server. Please check your connection and try again."}`)
     } finally {
       setIsGenerating(false)
     }
   }
 
-  const handleSave = async () => {
+  const handlePublish = async () => {
     if (!generatedImage) return
 
-    setIsSaving(true)
+    setIsPublishing(true)
+    setError(null)
+    setSuccess(null)
 
     try {
-      const response = await fetch("/api/posts", {
+      const response = await fetch("/api/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageUrl: generatedImage,
-          prompt,
+          prompt: generatedPrompt || prompt,
         }),
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        alert("Image saved to feed!")
+        setSuccess("Image published successfully!")
         setPrompt("")
         setGeneratedImage(null)
+        setGeneratedPrompt("")
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(null), 3000)
       } else {
-        throw new Error("Failed to save")
+        const errorMsg = data.error || "Failed to publish image. Please try again."
+        setError(errorMsg)
       }
     } catch (error) {
-      console.error("[v0] Error saving post:", error)
-      alert("Failed to save image. Please try again.")
+      console.error("Error publishing image:", error)
+      setError(`Network error: ${error.message || "Failed to publish image. Please try again."}`)
     } finally {
-      setIsSaving(false)
+      setIsPublishing(false)
     }
   }
 
@@ -98,6 +120,14 @@ export default function GeneratePage() {
                 <Grid3x3 className="w-4 h-4" />
               </Button>
             </Link>
+            {/* Auth button - uncomment if using authentication */}
+            {/* <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              <LogOut className="w-4 h-4" />
+            </Button> */}
           </nav>
         </div>
       </header>
@@ -143,22 +173,41 @@ export default function GeneratePage() {
           </div>
         </Card>
 
+        {error && (
+          <Card className="p-4 mb-6 border-red-500 bg-red-50 dark:bg-red-950">
+            <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+          </Card>
+        )}
+
+        {success && (
+          <Card className="p-4 mb-6 border-green-500 bg-green-50 dark:bg-green-950">
+            <p className="text-green-700 dark:text-green-300 text-sm">{success}</p>
+          </Card>
+        )}
+
         {generatedImage && (
           <Card className="p-6">
             <div className="space-y-4">
               <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
-                <Image src={generatedImage || "/placeholder.svg"} alt={prompt} fill className="object-cover" />
+                <Image src={generatedImage || "/placeholder.svg"} alt={generatedPrompt || prompt} fill className="object-cover" />
               </div>
 
+              {generatedPrompt && (
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-medium mb-1">Prompt used:</p>
+                  <p>{generatedPrompt}</p>
+                </div>
+              )}
+
               <div className="flex gap-3">
-                <Button onClick={handleSave} disabled={isSaving} className="flex-1 gap-2">
-                  {isSaving ? (
+                <Button onClick={handlePublish} disabled={isPublishing} className="flex-1 gap-2">
+                  {isPublishing ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving...
+                      Publishing...
                     </>
                   ) : (
-                    "Save to Feed"
+                    "Publish"
                   )}
                 </Button>
                 <Button onClick={handleGenerate} variant="outline" disabled={isGenerating}>
