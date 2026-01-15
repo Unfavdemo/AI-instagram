@@ -2,6 +2,18 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 
 export async function POST(request) {
+  // Verify Prisma client is available
+  if (!prisma) {
+    console.error("Prisma client is not initialized")
+    return NextResponse.json(
+      { 
+        error: "Database connection error",
+        details: process.env.NODE_ENV === "development" ? "Prisma client not initialized" : undefined
+      },
+      { status: 500 },
+    )
+  }
+
   try {
     const body = await request.json()
     const { imageUrl, prompt } = body

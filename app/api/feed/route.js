@@ -2,15 +2,33 @@ import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 
 export async function GET(request) {
+  // Verify Prisma client is available
+  if (!prisma) {
+    console.error("Prisma client is not initialized")
+    return NextResponse.json(
+      { 
+        error: "Database connection error",
+        details: process.env.NODE_ENV === "development" ? "Prisma client not initialized" : undefined
+      },
+      { status: 500 },
+    )
+  }
+
   try {
-    // Use Next.js's nextUrl for query parameter parsing, with fallback
+    // Parse query parameters from the request URL
+    // In Next.js App Router, request.url contains the full URL
     let searchParams
-    if (request.nextUrl) {
-      searchParams = request.nextUrl.searchParams
-    } else {
-      // Fallback: parse URL manually if nextUrl is not available
+    try {
       const url = new URL(request.url)
       searchParams = url.searchParams
+    } catch (urlError) {
+      console.error("Error parsing request URL:", urlError)
+      // Fallback: try to get from nextUrl if available
+      if (request.nextUrl) {
+        searchParams = request.nextUrl.searchParams
+      } else {
+        throw new Error("Unable to parse request URL")
+      }
     }
     
     // Parse query parameters with defaults
@@ -59,17 +77,21 @@ export async function GET(request) {
       })
     } catch (error) {
       console.error("Database error in feed GET API:", error)
+      console.error("Error stack:", error.stack)
+      console.error("Error code:", error.code)
       const errorMessage = error.message || "Unknown database error"
+      const errorCode = error.code || "UNKNOWN"
       return NextResponse.json(
         { 
           error: "Failed to fetch feed",
-          details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+          details: process.env.NODE_ENV === "development" ? `${errorMessage} (Code: ${errorCode})` : undefined
         },
         { status: 500 },
       )
     }
   } catch (error) {
     console.error("Error in feed GET API:", error)
+    console.error("Error stack:", error.stack)
     const errorMessage = error.message || "Unknown error"
     return NextResponse.json(
       { 
