@@ -3,9 +3,15 @@ import prisma from "@/lib/prisma"
 
 export async function GET(request) {
   try {
-    // Handle Request object - Next.js provides request.url as a string
-    const url = new URL(request.url)
-    const { searchParams } = url
+    // Use Next.js's nextUrl for query parameter parsing, with fallback
+    let searchParams
+    if (request.nextUrl) {
+      searchParams = request.nextUrl.searchParams
+    } else {
+      // Fallback: parse URL manually if nextUrl is not available
+      const url = new URL(request.url)
+      searchParams = url.searchParams
+    }
     
     // Parse query parameters with defaults
     let page = parseInt(searchParams.get("page") || "1", 10)
@@ -53,15 +59,23 @@ export async function GET(request) {
       })
     } catch (error) {
       console.error("Database error in feed GET API:", error)
+      const errorMessage = error.message || "Unknown database error"
       return NextResponse.json(
-        { error: "Failed to fetch feed" },
+        { 
+          error: "Failed to fetch feed",
+          details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+        },
         { status: 500 },
       )
     }
   } catch (error) {
     console.error("Error in feed GET API:", error)
+    const errorMessage = error.message || "Unknown error"
     return NextResponse.json(
-      { error: "Failed to fetch feed" },
+      { 
+        error: "Failed to fetch feed",
+        details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+      },
       { status: 500 },
     )
   }
