@@ -88,8 +88,10 @@ export default function GeneratePage() {
         // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000)
       } else {
+        // Display error message with details if available
         const errorMsg = data.error || "Failed to publish image. Please try again."
-        setError(errorMsg)
+        const details = data.details ? `: ${data.details}` : ""
+        setError(`${errorMsg}${details}`)
       }
     } catch (error) {
       console.error("Error publishing image:", error)

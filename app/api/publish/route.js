@@ -46,18 +46,22 @@ export async function POST(request) {
       return NextResponse.json(publishedImage, { status: 201 })
     } catch (error) {
       console.error("Database error in publish API:", error)
+      console.error("Error stack:", error.stack)
+      console.error("Error code:", error.code)
       // Include more specific error information for debugging
       const errorMessage = error.message || "Unknown database error"
+      const errorCode = error.code || "UNKNOWN"
       return NextResponse.json(
         { 
           error: "Failed to publish image",
-          details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+          details: process.env.NODE_ENV === "development" ? `${errorMessage} (Code: ${errorCode})` : undefined
         },
         { status: 500 },
       )
     }
   } catch (error) {
     console.error("Error in publish API:", error)
+    console.error("Error stack:", error.stack)
     const errorMessage = error.message || "Unknown error"
     return NextResponse.json(
       { 
