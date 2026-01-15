@@ -26,7 +26,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("[v0] Error saving post:", error)
+    console.error("Error saving post:", error)
     return NextResponse.json({ error: "Failed to save post" }, { status: 500 })
   }
 }
@@ -47,7 +47,7 @@ export async function GET() {
 
     return NextResponse.json({ posts })
   } catch (error) {
-    console.error("[v0] Error fetching posts:", error)
+    console.error("Error fetching posts:", error)
     return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 })
   }
 }

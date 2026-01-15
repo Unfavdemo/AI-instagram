@@ -4,9 +4,8 @@ import { Providers } from "@/components/providers"
 import "./globals.css"
 
 export const metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.app",
+  title: "Generative Instagram",
+  description: "AI-powered image generation and social feed",
   icons: {
     icon: [
       {

@@ -46,15 +46,24 @@ export async function POST(request) {
       return NextResponse.json(publishedImage, { status: 201 })
     } catch (error) {
       console.error("Database error in publish API:", error)
+      // Include more specific error information for debugging
+      const errorMessage = error.message || "Unknown database error"
       return NextResponse.json(
-        { error: "Failed to publish image" },
+        { 
+          error: "Failed to publish image",
+          details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+        },
         { status: 500 },
       )
     }
   } catch (error) {
     console.error("Error in publish API:", error)
+    const errorMessage = error.message || "Unknown error"
     return NextResponse.json(
-      { error: "Failed to publish image" },
+      { 
+        error: "Failed to publish image",
+        details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+      },
       { status: 500 },
     )
   }
